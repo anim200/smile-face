@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+  <div class="booth">
+    <header class="booth__head">
+      <h1 class="brand">{{ app_name }}</h1>
+      <nav class="nav">
+        {% set pages = [('home', '/', 'Home'), ('train', '/train', 'Train'),
+                        ('classify', '/classify', 'Classify'), ('history', '/history', 'History')] %}
+        {% for key, href, text in pages %}
+          <a class="nav__item {% if active_page == key %}nav__item--on{% endif %}"
+             href="{{ href }}">{{ text }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+
+    <main class="paper">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="booth__foot">
+      Smile classifier &middot; HOG features &middot; RBF support vector machine
+    </footer>
+  </div>
+</body>
+</html>

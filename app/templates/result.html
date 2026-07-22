@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="verdict">
+  {{ face(prediction.predicted_class, prediction.confidence, 150) }}
+  <h2 class="verdict__label">{{ class_names[prediction.predicted_class] }}</h2>
+
+  {% if prediction.confidence %}
+  <div class="meter">
+    <span class="meter__tag">Confidence</span>
+    <div class="meter__track">
+      <div class="meter__fill meter__fill--{{ prediction.predicted_class }}"
+           style="width: {{ (prediction.confidence * 100) | round(1) }}%"></div>
+    </div>
+    <span class="meter__value">{{ '%.1f%%' % (prediction.confidence * 100) }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="strip">
+  <img class="strip__thumb" src="{{ prediction.image_url }}" alt="The photo you uploaded">
+  <div class="strip__meta">
+    <p class="strip__name">{{ prediction.original_filename }}</p>
+    <p class="strip__sub">
+      Model {{ prediction.model_version }} &middot;
+      {{ prediction.created_at.strftime('%d %b %Y, %H:%M') }}
+    </p>
+  </div>
+  <a class="btn btn--small" href="/classify">Try another</a>
+</div>
+
+<p class="centre"><a class="link" href="/history">See all results</a></p>
+{% endblock %}

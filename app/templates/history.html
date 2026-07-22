@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="hero">
+  {{ face('smiling', 0.7, 90) }}
+  <div>
+    <h2 class="hero__title">Everything it has seen</h2>
+    <p class="hero__lead">
+      {{ total }} classification{{ '' if total == 1 else 's' }} so far
+      {%- if totals %} &mdash;
+        {{ totals.get('smiling', 0) }} smiling, {{ totals.get('not_smiling', 0) }} not
+      {%- endif %}.
+    </p>
+  </div>
+</div>
+
+{% if predictions %}
+<table class="grid">
+  <thead>
+    <tr><th>Image</th><th>Class</th><th>Confidence</th><th>Date &amp; time</th></tr>
+  </thead>
+  <tbody>
+    {% for row in predictions %}
+    <tr>
+      <td>
+        <div class="cell-img">
+          <img class="thumb" src="{{ row.image_url }}" alt="{{ row.original_filename }}">
+          {{ face(row.predicted_class, row.confidence, 34) }}
+        </div>
+      </td>
+      <td><span class="badge badge--{{ row.predicted_class }}">{{ class_names[row.predicted_class] }}</span></td>
+      <td class="num">{% if row.confidence %}{{ '%.1f%%' % (row.confidence * 100) }}{% else %}&mdash;{% endif %}</td>
+      <td class="num">{{ row.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page_count > 1 %}
+<nav class="pager">
+  {% if page_number > 1 %}<a class="link" href="/history?page={{ page_number - 1 }}">&larr; Newer</a>{% endif %}
+  <span class="pager__at">Page {{ page_number }} of {{ page_count }}</span>
+  {% if page_number < page_count %}<a class="link" href="/history?page={{ page_number + 1 }}">Older &rarr;</a>{% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<section class="card">
+  <p>Nothing here yet. <a class="link" href="/classify">Classify a photo</a> and it will appear.</p>
+</section>
+{% endif %}
+{% endblock %}

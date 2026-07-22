@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="hero">
+  {{ face('neutral', none, 110) }}
+  <div>
+    <h2 class="hero__title">Show me a face</h2>
+    <p class="hero__lead">Upload one photo and the model will tell you whether it sees a smile.</p>
+  </div>
+</div>
+
+{% if error %}
+<p class="alert alert--bad">{{ error }}</p>
+{% endif %}
+
+{% if model %}
+<form class="card" method="post" action="/classify" enctype="multipart/form-data">
+  <h3 class="card__title">Upload a photo</h3>
+  <input class="file" type="file" name="file" accept="image/*" required>
+  <button class="btn" type="submit">Classify it</button>
+  <p class="hint">JPEG, PNG, WebP or BMP. Converted to JPEG and kept in your history.</p>
+</form>
+{% else %}
+<section class="card card--warn">
+  <h3 class="card__title">No model available</h3>
+  <p>There is nothing to classify with yet. <a class="link" href="/train">Train a model first.</a></p>
+</section>
+{% endif %}
+{% endblock %}

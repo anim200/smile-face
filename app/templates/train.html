@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="hero">
+  {{ face('smiling' if ready else 'neutral', 0.8 if ready else none, 110) }}
+  <div>
+    <h2 class="hero__title">Teach it something new</h2>
+    <p class="hero__lead">
+      Upload photos one class at a time. Once both jars have at least
+      {{ minimum }} photos, you can train a fresh model from them.
+    </p>
+  </div>
+</div>
+
+{% if message %}<p class="alert alert--good">{{ message }}</p>{% endif %}
+{% if error %}<p class="alert alert--bad">{{ error }}</p>{% endif %}
+{% if request.query_params.get('started') %}
+<p class="alert alert--good">Training started. Reload in a moment to see the result.</p>
+{% endif %}
+
+<section class="card">
+  <h3 class="card__title">Staged photos</h3>
+  <div class="jars">
+    {% for label in labels %}
+    {% set n = counts[label] %}
+    <div class="jar">
+      <div class="jar__top">
+        <span class="jar__name">{{ class_names[label] }}</span>
+        <span class="jar__count">{{ n }}</span>
+      </div>
+      <div class="jar__track">
+        <div class="jar__fill jar__fill--{{ label }}"
+             style="width: {{ [100, (n / minimum * 100) | round(0, 'floor')] | min }}%"></div>
+      </div>
+      <span class="jar__need">
+        {% if n >= minimum %}ready{% else %}{{ minimum - n }} more needed{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<form class="card" method="post" action="/train/upload" enctype="multipart/form-data">
+  <h3 class="card__title">Add photos</h3>
+  <label class="field">
+    <span class="field__label">These photos are…</span>
+    <select class="select" name="label" required>
+      {% for label in labels %}
+      <option value="{{ label }}">{{ class_names[label] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <input class="file" type="file" name="files" accept="image/*" multiple required>
+  <button class="btn" type="submit">Add to staging</button>
+  <p class="hint">Select many files at once. Everything is converted to JPEG.</p>
+</form>
+
+<section class="card">
+  <h3 class="card__title">Train</h3>
+  {% if busy %}
+    <p class="hint">A run is in progress. Reload to check on it.</p>
+  {% elif ready %}
+    <form method="post" action="/train/start">
+      <button class="btn" type="submit">Train a new model</button>
+    </form>
+    <p class="hint">
+      The current model keeps serving until the new one has been trained and
+      validated. Staged photos are deleted once the run succeeds.
+    </p>
+  {% else %}
+    <button class="btn btn--off" disabled>Train a new model</button>
+    <p class="hint">Both classes need at least {{ minimum }} photos first.</p>
+  {% endif %}
+
+  <form method="post" action="/train/clear" class="inline">
+    <button class="btn btn--ghost" type="submit">Clear staged photos</button>
+  </form>
+</section>
+
+{% if runs %}
+<section class="card">
+  <h3 class="card__title">Recent runs</h3>
+  <table class="grid">
+    <thead><tr><th>Status</th><th>Images</th><th>Accuracy</th><th>Model</th><th>Started</th></tr></thead>
+    <tbody>
+      {% for run in runs %}
+      <tr>
+        <td><span class="badge badge--{{ run.status }}">{{ run.status }}</span></td>
+        <td class="num">{{ run.images_used }}</td>
+        <td class="num">{{ '%.2f%%' % (run.accuracy * 100) if run.accuracy else '—' }}</td>
+        <td class="num">{{ run.model_version or '—' }}</td>
+        <td class="num">{{ run.started_at.strftime('%d %b, %H:%M') }}</td>
+      </tr>
+      {% if run.error %}
+      <tr><td colspan="5" class="err">{{ run.error }}</td></tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

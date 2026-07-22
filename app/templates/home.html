@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="hero">
+  {{ face('smiling', 0.94, 120) }}
+  <div>
+    <h2 class="hero__title">A machine that looks at a face and guesses the mood</h2>
+    <p class="hero__lead">
+      Upload a photo and it answers smiling or not smiling, with a confidence
+      score. Upload labelled photos and it learns a new model from them.
+    </p>
+  </div>
+</div>
+
+{% if model %}
+<section class="card card--live">
+  <h3 class="card__title">Active model</h3>
+  <dl class="facts">
+    <div><dt>Version</dt><dd>{{ model.version }}</dd></div>
+    <div><dt>Accuracy</dt><dd>{{ '%.2f%%' % (model.accuracy * 100) }}</dd></div>
+    <div><dt>F1 (smiling)</dt><dd>{{ '%.4f' % model.metrics.get('f1_smiling', 0) }}</dd></div>
+    <div><dt>Training images</dt><dd>{{ model.n_samples }}</dd></div>
+    <div><dt>Trained</dt><dd>{{ model.trained_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
+    <div><dt>Validation</dt><dd>{{ model.metrics.get('strategy', 'n/a') }}</dd></div>
+  </dl>
+</section>
+{% else %}
+<section class="card card--warn">
+  <h3 class="card__title">No model loaded</h3>
+  <p>Nothing can be classified yet. Head to the Train page to build one.</p>
+</section>
+{% endif %}
+
+<section class="card">
+  <h3 class="card__title">How it works</h3>
+
+  <h4>Preparing the data</h4>
+  <p>
+    Every image is converted to greyscale and resized to 64&times;64. Colour
+    carries no information about whether someone is smiling, and dropping it
+    removes two thirds of the input for free.
+  </p>
+
+  <h4>The features</h4>
+  <p>
+    Rather than feeding raw pixels to the classifier, each image is turned into
+    a <strong>Histogram of Oriented Gradients</strong>: the image is divided into
+    8&times;8 cells, and each cell records the directions in which brightness
+    changes. A smile is a specific arrangement of curved edges around the mouth,
+    which is exactly what this measures. It is also far more tolerant of lighting
+    than pixel values, because it looks at how brightness <em>changes</em> rather
+    than what it is.
+  </p>
+  <p>
+    HOG is implemented directly in numpy here rather than imported from
+    scikit-image. It is one well-defined algorithm, and writing it out removed a
+    large compiled dependency with no measurable loss in accuracy.
+  </p>
+
+  <h4>The model</h4>
+  <p>
+    The 1,764 HOG values pass through standardisation, then PCA keeping 95% of
+    the variance, then an <strong>RBF-kernel support vector machine</strong>.
+    With around 1,200 training images and more feature dimensions than samples,
+    an SVM is the right classical choice: it optimises the margin between the
+    two classes rather than trying to model the whole space. A neural network
+    would need far more data, a GPU, and a much larger container to solve a
+    problem that fits in two seconds of CPU time.
+  </p>
+  <p>
+    Preprocessing and classifier are wrapped in a single scikit-learn
+    <code>Pipeline</code> and pickled together, so inference can never drift
+    from training: there is one artifact, and it contains every transformation
+    applied at fit time.
+  </p>
+
+  <h4>Honest reporting</h4>
+  <p>
+    The dataset is close to balanced, 600 smiling against 603 not smiling, so
+    accuracy is a meaningful number on its own. F1 for the smiling class is
+    reported next to it as a check: if the two ever diverge, the model has
+    started favouring one class and the accuracy figure has stopped meaning
+    what it appears to.
+  </p>
+</section>
+{% endblock %}

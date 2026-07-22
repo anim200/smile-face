@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_face.html" import face %}
+
+{% block content %}
+<div class="hero">
+  {{ face('not_smiling', 0.3, 100) }}
+  <div>
+    <h2 class="hero__title">{{ message or 'Something went wrong' }}</h2>
+    <p class="hero__lead"><a class="link" href="/">Back to the start</a></p>
+  </div>
+</div>
+{% endblock %}

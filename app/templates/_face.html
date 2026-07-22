@@ -1,0 +1,25 @@
+{% macro face(label='neutral', confidence=none, size=140) %}
+{% set conf = confidence if confidence is not none else 0.5 %}
+{% if label == 'smiling' %}
+  {% set fill = '#2FBF9B' %}
+  {% set ink = '#0B3F33' %}
+  {% set curve = 74 + (30 * conf) %}
+  {% set mouth = 'M36 70 Q60 ' ~ curve ~ ' 84 70' %}
+{% elif label == 'not_smiling' %}
+  {% set fill = '#FFB627' %}
+  {% set ink = '#5A3D00' %}
+  {% set curve = 76 - (14 * conf) %}
+  {% set mouth = 'M38 76 Q60 ' ~ curve ~ ' 82 76' %}
+{% else %}
+  {% set fill = '#E8D9EE' %}
+  {% set ink = '#2B1B3D' %}
+  {% set mouth = 'M38 74 Q60 74 82 74' %}
+{% endif %}
+<svg class="face" width="{{ size }}" height="{{ size }}" viewBox="0 0 120 120"
+     role="img" aria-label="{{ class_names.get(label, 'Awaiting a photo') }}">
+  <circle cx="60" cy="60" r="52" fill="{{ fill }}"/>
+  <circle cx="43" cy="49" r="7" fill="{{ ink }}"/>
+  <circle cx="77" cy="49" r="7" fill="{{ ink }}"/>
+  <path d="{{ mouth }}" fill="none" stroke="{{ ink }}" stroke-width="7" stroke-linecap="round"/>
+</svg>
+{% endmacro %}
