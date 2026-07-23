@@ -7,9 +7,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      TZ: ${TZ}
+      TZ: ${TZ:-Asia/Dhaka}
     ports:
-      - "${POSTGRES_PORT_HOST:-5432}:5432"
+      - "${POSTGRES_PORT_HOST:-15432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +17,38 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks: [ysdtp]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smile-classifier-30225:1.0
+    container_name: smile_app_30225
+    restart: unless-stopped
+    environment:
+      STUDENT_ID: ${STUDENT_ID:-30225}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TZ: ${TZ:-Asia/Dhaka}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Inside the network the database is reachable by service name on its
+      # own port. These override whatever .env holds for local development.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      BASE_DIR: /app
+      DATA_DIR: /app/data
+      MODEL_DIR: /app/models
+      SEED_DIR: /app/seed
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - modelstore:/app/models
+      - datastore:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
     networks: [ysdtp]
 
   pgadmin:
@@ -39,6 +71,8 @@ services:
 
 volumes:
   pgdata:
+  modelstore:
+  datastore:
   pgadmin_data:
 
 networks:

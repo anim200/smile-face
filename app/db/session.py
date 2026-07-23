@@ -36,17 +36,31 @@ def get_db() -> Iterator[Session]:
     finally:
         session.close()
 
-def init_database() -> None:
-    """Create any missing tables.
+def init_database(retries: int = 10, delay: float = 2.0) -> None:
+    """Create any missing tables, waiting for the database to accept connections.
 
     Importing the models module here is required, not decorative: SQLAlchemy
     registers a table on ``Base.metadata`` when the model class is defined, so
     ``create_all`` sees nothing unless the module has been imported first.
 
-    Adequate for a project of this size. A longer lived system would use Alembic
-    migrations, since ``create_all`` cannot alter an existing table.
+    The retry loop exists because a container can start before the database is
+    reachable. Failing fast here turns a two second wait into a crash loop.
     """
+    import time
+
+    from sqlalchemy.exc import OperationalError
+
     from app.db import models  # noqa: F401  - registers the ORM mappings
 
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables ready")
+    for attempt in range(1, retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables ready")
+            return
+        except OperationalError as exc:
+            if attempt == retries:
+                raise
+            logger.warning(
+                "Database not ready (attempt %d/%d): %s", attempt, retries, exc
+            )
+            time.sleep(delay)

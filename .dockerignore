@@ -1,10 +1,15 @@
 .git
 .gitignore
+.gitattributes
 .venv
+venv
 __pycache__
 *.pyc
 .pytest_cache
 .ruff_cache
+.vscode
 data/
+models/
 tests/
 .env
+*.tar
