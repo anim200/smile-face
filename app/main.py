@@ -53,6 +53,10 @@ def create_app() -> FastAPI:
     templates = Jinja2Templates(directory=str(settings.base_dir / "app" / "templates"))
     templates.env.globals["app_name"] = settings.app_name
     templates.env.globals["class_names"] = CLASS_DISPLAY_NAMES
+    # Upload limits are constant for the life of the process, so they belong
+    # here rather than being threaded through every route's context.
+    templates.env.globals["max_mb"] = settings.max_upload_bytes // (1024 * 1024)
+    templates.env.globals["max_files"] = settings.max_files_per_upload
     app.state.templates = templates
 
     app.mount(
